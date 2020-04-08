@@ -1,0 +1,6 @@
+data/*/*
+ckpts/*/*
+jobs/
+__pycache__
+*.pyc
+*.swp
