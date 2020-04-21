@@ -1,6 +1,7 @@
 data/*/*
 ckpts/*/*
 jobs/
+src/weights/
 __pycache__
 *.pyc
 *.swp
