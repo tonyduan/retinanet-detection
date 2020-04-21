@@ -11,22 +11,23 @@ from torchnet import meter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from src.models import *
-from src.datasets import get_dataset, get_dim
+from src.datasets import *
 
 
 if __name__ == "__main__":
 
     argparser = ArgumentParser()
     argparser.add_argument("--device", default="cuda", type=str)
-    argparser.add_argument("--lr", default=0.1, type=float)
-    argparser.add_argument("--batch-size", default=64, type=int)
+    argparser.add_argument("--lr", default=0.001, type=float)
+    argparser.add_argument("--alpha", default=0.25, type=float)
+    argparser.add_argument("--gamma", default=2.0, type=float)
+    argparser.add_argument("--batch-size", default=16, type=int)
     argparser.add_argument("--num-workers", default=min(os.cpu_count(), 8), type=int)
     argparser.add_argument("--num-epochs", default=120, type=int)
     argparser.add_argument("--print-every", default=20, type=int)
     argparser.add_argument("--save-every", default=50, type=int)
     argparser.add_argument("--experiment-name", default="voc", type=str)
-    argparser.add_argument("--precision", default="half", type=str)
-    argparser.add_argument("--model", default="FasterRCNN", type=str)
+    argparser.add_argument("--model", default="RetinaNet", type=str)
     argparser.add_argument("--dataset", default="voc", type=str)
     argparser.add_argument('--output-dir', type=str, default=os.getenv("PT_OUTPUT_DIR"))
     args = argparser.parse_args()
@@ -34,14 +35,19 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    model = eval(args.model)(dataset=args.dataset, device=args.device, precision=args.precision)
+    model = eval(args.model)(device=args.device, num_classes=get_num_labels(args.dataset),
+                             alpha=args.alpha, gamma=args.gamma)
     model.train()
 
-    train_loader = DataLoader(get_dataset(args.dataset, "train", args.precision),
+    dataset = get_dataset(args.dataset, "train")
+    train_loader = DataLoader(dataset,
                               shuffle=True,
                               batch_size=args.batch_size,
                               num_workers=args.num_workers,
-                              pin_memory=False)
+                              pin_memory=False,
+                              collate_fn=lambda x: collate_fn(x, args.dataset))
+
+    x, labels, bbox = next(iter(train_loader))
 
     optimizer = optim.SGD(model.parameters(),
                           lr=args.lr,
@@ -57,10 +63,14 @@ if __name__ == "__main__":
 
     for epoch in range(args.num_epochs):
 
-        for i, (x, y) in enumerate(train_loader):
+        for i, (x, cls_tgts, reg_tgts) in enumerate(train_loader):
 
-            x, y = x.to(args.device), y.to(args.device)
-            loss = model.loss(x, y).mean()
+            x = x.to(args.device)
+            for fm_no in range(len(cls_tgts)):
+                cls_tgts[fm_no] = cls_tgts[fm_no].to(args.device)
+                reg_tgts[fm_no] = reg_tgts[fm_no].to(args.device)
+
+            loss = model.loss(x, cls_tgts, reg_tgts).mean()
 
             optimizer.zero_grad()
             loss.backward()
@@ -90,6 +100,4 @@ if __name__ == "__main__":
     pickle.dump(args, open(args_path, "wb"))
     save_path = f"{args.output_dir}/{args.experiment_name}/losses_train.npy"
     np.save(save_path, np.array(train_losses))
-
-
 
