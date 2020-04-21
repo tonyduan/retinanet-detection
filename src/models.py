@@ -249,7 +249,9 @@ class RetinaNet(nn.Module):
 
             for label, box in zip(labels, boxes):
 
-                iou = calculate_iou(fm_anchor_boxes, box.unsqueeze(0)).squeeze()
+                original_shape = fm_anchor_boxes.shape
+                iou = calculate_iou(fm_anchor_boxes.reshape(-1, 4), box.unsqueeze(0))
+                iou = iou.reshape(original_shape[:-1])
 
                 fm_cls_tgts[label][iou > 0.5] = 1.0
                 fm_cls_tgts[label][(iou < 0.5) & (iou > 0.4)] = -1.0

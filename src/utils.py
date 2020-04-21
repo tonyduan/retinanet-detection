@@ -24,8 +24,8 @@ def calculate_iou(boxesA, boxesB, lib="torch"):
 
     Parameters
     ----------
-    boxesA: M x 4 tensor or array
-    boxesB: N x 4 tensor or array
+    boxesA: M x 4 torch tensor or numpy array
+    boxesB: N x 4 torch tensor or numpy array
 
     Returns
     -------
