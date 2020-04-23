@@ -61,7 +61,9 @@ def micro_avg_auprc(true_labels, true_boxes, pred_labels, pred_boxes, pred_score
     flattened_labels = np.array(flattened_labels)
     flattened_preds = np.array(flattened_preds)
 #    y, x = calibration_curve(flattened_labels, flattened_preds)
-#    plt.scatter(x, y)
+#    plt.scatter(x, y, color="black")
+#    plt.xlim((0, 1))
+#    plt.ylim((0, 1))
 #    plt.show()
     return average_precision_score(flattened_labels, flattened_preds, "micro")
 

@@ -40,7 +40,7 @@ class RetinaNet(nn.Module):
     num_feature_maps = len(anchor_areas)
     num_anchors = len(anchor_aspects) * len(anchor_scales)
 
-    def __init__(self, device, num_classes, fpn_dim=256, alpha=0.25, gamma=2.0,
+    def __init__(self, device, num_classes, fpn_dim=256, alpha=0.25, gamma=2.0, pi=0.01,
                  layers_config=resnet50_layers):
         super().__init__()
         self.device = device
@@ -48,6 +48,7 @@ class RetinaNet(nn.Module):
         self.fpn_dim = fpn_dim
         self.alpha = alpha
         self.gamma = gamma
+        self.pi = pi
         self.layers_config = layers_config
 
         # standard initial preamble
@@ -112,7 +113,7 @@ class RetinaNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-        nn.init.constant_(self.cls_head[-1].bias, -math.log((1-0.01)/0.01))
+        nn.init.constant_(self.cls_head[-1].bias, -math.log((1 - self.pi) / self.pi))
         if self.layers_config is self.resnet18_layers:
             pretrained_state_dict = torch.load("src/weights/pretrained_resnet18.torch")
         elif self.layers_config is self.resnet50_layers:
