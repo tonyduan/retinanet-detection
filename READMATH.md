@@ -4,7 +4,7 @@ Last update: May 2020.
 
 ---
 
-This repository implements the RetinaNet architecture for single-shot object detction as described in [1], built on top of a ResNet-50 backbone.
+This repository implements the RetinaNet architecture for single-shot object detction as described in [1], built on top of a ResNet-50 backbone [2]. Here we support the MSCOCO [3] and Pascal VOC [4] datasets. See the `out/` directory for examples from trained models.
 
 #### Preliminaries
 
@@ -12,6 +12,8 @@ The object detection problem is joint *classification* and bounding box *regress
 $$
 \mathcal{L}(x, y, b) = \mathcal{L}_\mathrm{cls}(x,y) + \mathcal{L}_\mathrm{reg}(x, b)1\{y \neq 0\}
 $$
+
+
 Here $x$ is an image, $y$ is a label, and $b$ is a bounding box with four coordinates.
 
 How do we do this? Given an image, we'll create a set of *anchor boxes* at varous (1) locations, (2) sizes, and (3) aspect ratios. In the left image below we show the anchor boxes for a fixed scale, at the bottom-left and top-right corners. In right image below we show the anchor boxes fixed at the bottom-left corner and default aspect ratio, across various sizes.
@@ -39,6 +41,8 @@ In order to produce valid targets for the neural network (i.e. for the classific
 $$
 (x, y, b) \mapsto (\mathrm{cls\ target}\in \{0,1\}^{K, M, N, A, |\mathcal{Y}|, }, \mathrm{reg\ target}\in\mathbb{R}^{K, M, N, A, 4})
 $$
+
+
 Note that above $K$ is the number of feature maps in the FPN, $M,N$ are the number of coordinates, and $A$ the number of anchor boxes per coordinate. 
 
 We choose to do this transform in the `collate_fn` of the dataloader. The advantage of doing the target transformation in the loader instead of the model is that we can take advantage of PyTorch default dataloader multi-processing.
@@ -55,12 +59,6 @@ $$
 
 
 Here $\alpha^{(y)} = \alpha 1\{y=1\} + (1-\alpha)1\{y=0\}$ is a scaling factor to address class imbalance in the training data (since there are far more negative labels than positive labels). Note that setting $\alpha=0.5$ and $\gamma=0$ recovers original log-likelihood. All final linear layer logits are initialized to prevalence level $\pi=0.01$.
-
-#### Datasets
-
-Here we support the MSCOCO [3] and Pascal VOC [4] datasets. 
-
-See the `out/` directory for examples from trained models.
 
 #### References
 
