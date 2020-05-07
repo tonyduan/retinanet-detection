@@ -1,5 +1,5 @@
 """
-Simple visualization of the anchor targets.
+Simple visualization of the anchor targets for an example 224 x 224 image.
 
 Top subfigure: fixed feature map size; draw all anchors at bottom left and top right corners.
 Bottom subfigure: fix anchor choice at bottom left conrer; vary feature map size.
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     
     all_fm_anchor_boxes = RetinaNet.get_all_fm_anchor_boxes(224, 224)
 
-    fig, (ax1, ax2) = plt.subplots(figsize=(4, 9), nrows=2, ncols=1)
+    fig, (ax1, ax2) = plt.subplots(figsize=(9, 4), nrows=1, ncols=2)
     box = patches.Rectangle((0, 0), 224, 224, edgecolor="green", facecolor="none", linewidth=1)
     ax1.add_patch(box)
     box = patches.Rectangle((0, 0), 224, 224, edgecolor="green", facecolor="none", linewidth=1)

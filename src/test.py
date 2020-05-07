@@ -16,10 +16,10 @@ if __name__ == "__main__":
 
     argparser = ArgumentParser()
     argparser.add_argument("--device", default="cuda", type=str)
-    argparser.add_argument("--dataset-skip", default=5, type=int)
-    argparser.add_argument("--experiment-name", default="voc", type=str)
-    argparser.add_argument("--dataset", default="voc", type=str)
-    argparser.add_argument("--model", default="RetinaNet", type=str)
+    argparser.add_argument("--dataset-skip", default=1, type=int)
+    argparser.add_argument("--experiment-name", default="coco", type=str)
+    argparser.add_argument("--dataset", default="coco", type=str)
+    argparser.add_argument("--data-parallel", action="store_true")
     argparser.add_argument("--output-dir", type=str, default=os.getenv("PT_OUTPUT_DIR"))
     argparser.add_argument("--save-path", type=str, default=None)
     args = argparser.parse_args()
@@ -32,7 +32,8 @@ if __name__ == "__main__":
     else:
         save_path = args.save_path
 
-    model = eval(args.model)(device=args.device, num_classes=get_num_labels(args.dataset))
+    model = RetinaNet(device=args.device, num_classes=get_num_labels(args.dataset))
+    model = nn.DataParallel(model) if args.data_parallel else model
     saved_dict = torch.load(save_path)
     model.load_state_dict(saved_dict)
     model.eval()

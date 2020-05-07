@@ -51,7 +51,7 @@ if __name__ == "__main__":
             ax2.add_patch(box)
 
     zeroed_reg_tgts = [torch.zeros_like(t) for t in reg_tgts]
-    labels, boxes, scores = RetinaNet.decode(image, cls_tgts, zeroed_reg_tgts, threshold=0.5)
+    labels, boxes, scores = RetinaNet.decode(image, cls_tgts, zeroed_reg_tgts, cls_threshold=0.5)
     for (x, y, w, h) in boxes:
         box = patches.Rectangle((x, y), w, h, edgecolor="red", facecolor="none", linewidth=1)
         ax3.add_patch(box)

@@ -5,7 +5,9 @@ from src.models import RetinaNet
 from src.utils import *
 
 
+CONTAINER_PATH = "/mnt/vlgrounding" # where the data is mounted to
 COCO_MAPPING = {1: 'person', 2: 'bicycle', 3: 'car', 4: 'motorcycle', 5: 'airplane', 6: 'bus', 7: 'train', 8: 'truck', 9: 'boat', 10: 'traffic light', 11: 'fire hydrant', 13: 'stop sign', 14: 'parking meter', 15: 'bench', 16: 'bird', 17: 'cat', 18: 'dog', 19: 'horse', 20: 'sheep', 21: 'cow', 22: 'elephant', 23: 'bear', 24: 'zebra', 25: 'giraffe', 27: 'backpack', 28: 'umbrella', 31: 'handbag', 32: 'tie', 33: 'suitcase', 34: 'frisbee', 35: 'skis', 36: 'snowboard', 37: 'sports ball', 38: 'kite', 39: 'baseball bat', 40: 'baseball glove', 41: 'skateboard', 42: 'surfboard', 43: 'tennis racket', 44: 'bottle', 46: 'wine glass', 47: 'cup', 48: 'fork', 49: 'knife', 50: 'spoon', 51: 'bowl', 52: 'banana', 53: 'apple', 54: 'sandwich', 55: 'orange', 56: 'broccoli', 57: 'carrot', 58: 'hot dog', 59: 'pizza', 60: 'donut', 61: 'cake', 62: 'chair', 63: 'couch', 64: 'potted plant', 65: 'bed', 67: 'dining table', 70: 'toilet', 72: 'tv', 73: 'laptop', 74: 'mouse', 75: 'remote', 76: 'keyboard', 77: 'cell phone', 78: 'microwave', 79: 'oven', 80: 'toaster', 81: 'sink', 82: 'refrigerator', 84: 'book', 85: 'clock', 86: 'vase', 87: 'scissors', 88: 'teddy bear', 89: 'hair drier', 90: 'toothbrush'}
+
 
 def get_labels_to_id(name):
     if name == "coco":
@@ -27,7 +29,7 @@ def get_normalization_stats():
 
 def unnormalize(x):
     """
-    For plotting purposes, unnormalize an image represented as a tensor.
+    For plotting purposes, unnormalize an image represented as a tensor using ImageNet stats.
     """
     normalization = get_normalization_stats()
     sigma = torch.tensor(normalization["sigma"]).unsqueeze(1).unsqueeze(2)
@@ -36,7 +38,7 @@ def unnormalize(x):
 
 def extract_labels_boxes_from_annotation(annotation, name):
     """
-    Some data munging to clean up annotations for datasets into a consistent representation.
+    Dataset specific munging to clean up annotations for datasets into a consistent representation.
 
     Returns
     -------
@@ -44,6 +46,7 @@ def extract_labels_boxes_from_annotation(annotation, name):
     boxes: variable length list of tuples of 4 floats (xmin, ymin, xmax, ymax) of each box
     """
     if name == "voc":
+
         labels_to_id = get_labels_to_id(name)
         bbox_fn = lambda d: (float(d["xmin"]), float(d["ymin"]), float(d["xmax"]), float(d["ymax"]))
         if isinstance(annotation["annotation"]["object"], list):
@@ -69,14 +72,16 @@ def get_dataset(name, split):
     target_transform = lambda annotation: extract_labels_boxes_from_annotation(annotation, name)
 
     if name == "voc" and split == "train":
-        return datasets.VOCDetection("./data/voc", image_set="train", download=True, year="2012",
+        return datasets.VOCDetection("./data/voc", image_set="train", download=True, 
+                                     year="2012",
                                      transform=transforms.Compose([
                                                transforms.ToTensor(),
                                                transforms.Normalize(stats["mu"], stats["sigma"])]),
                                      target_transform=target_transform)
 
     if name == "voc" and split == "test":
-        return datasets.VOCDetection("./data/voc", image_set="val", download=True, year="2012",
+        return datasets.VOCDetection("./data/voc", image_set="val", download=True, 
+                                     year="2012",
                                      transform=transforms.Compose([
                                                transforms.ToTensor(),
                                                transforms.Normalize(stats["mu"], stats["sigma"])]),
@@ -84,16 +89,16 @@ def get_dataset(name, split):
                                             
     
     if name == "coco" and split == "train":
-        return datasets.CocoDetection("/mycontainer/coco/train2014", 
-                                      "/mycontainer/coco/annotations/instances_train2014.json",
+        return datasets.CocoDetection(f"{CONTAINER_PATH}/coco/train2014", 
+                                      f"{CONTAINER_PATH}/coco/annotations/instances_train2014.json",
                                       transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize(stats["mu"], stats["sigma"])]),
                                       target_transform=target_transform)
 
     if name == "coco" and split == "test":
-        return datasets.CocoDetection("/mycontainer/coco/val2014",
-                                      "/mycontainer/coco/annotations/instances_val2014.json",
+        return datasets.CocoDetection(f"{CONTAINER_PATH}/coco/val2014",
+                                      f"{CONTAINER_PATH}/coco/annotations/instances_val2014.json",
                                       transform=transforms.Compose([
                                                 transforms.ToTensor(),
                                                 transforms.Normalize(stats["mu"], stats["sigma"])]),

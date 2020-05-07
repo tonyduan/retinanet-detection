@@ -21,22 +21,24 @@ if __name__ == "__main__":
     argparser.add_argument("--lr", default=0.001, type=float)
     argparser.add_argument("--alpha", default=0.25, type=float)
     argparser.add_argument("--gamma", default=2.0, type=float)
+    argparser.add_argument("--pi", default=0.01, type=float)
     argparser.add_argument("--batch-size", default=16, type=int)
     argparser.add_argument("--num-workers", default=min(os.cpu_count(), 8), type=int)
-    argparser.add_argument("--num-epochs", default=120, type=int)
+    argparser.add_argument("--num-epochs", default=20, type=int)
     argparser.add_argument("--print-every", default=20, type=int)
     argparser.add_argument("--save-every", default=50, type=int)
-    argparser.add_argument("--experiment-name", default="voc", type=str)
-    argparser.add_argument("--model", default="RetinaNet", type=str)
-    argparser.add_argument("--dataset", default="voc", type=str)
+    argparser.add_argument("--experiment-name", default="coco", type=str)
+    argparser.add_argument("--data-parallel", action="store_true")
+    argparser.add_argument("--dataset", default="coco", type=str)
     argparser.add_argument('--output-dir', type=str, default=os.getenv("PT_OUTPUT_DIR"))
     args = argparser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    model = eval(args.model)(device=args.device, num_classes=get_num_labels(args.dataset),
-                             alpha=args.alpha, gamma=args.gamma)
+    model = RetinaNet(device=args.device, num_classes=get_num_labels(args.dataset),
+                      alpha=args.alpha, gamma=args.gamma, pi=args.pi)
+    model = nn.DataParallel(model) if args.data_parallel else model
     model.train()
 
     dataset = get_dataset(args.dataset, "train")
@@ -98,6 +100,6 @@ if __name__ == "__main__":
     torch.save(model.state_dict(), save_path)
     args_path = f"{args.output_dir}/{args.experiment_name}/args.pkl"
     pickle.dump(args, open(args_path, "wb"))
-    save_path = f"{args.output_dir}/{args.experiment_name}/losses_train.npy"
+    save_path = f"{args.output_dir}/{args.experiment_name}/train_losses.npy"
     np.save(save_path, np.array(train_losses))
 
