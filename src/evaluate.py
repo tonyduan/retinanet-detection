@@ -133,8 +133,9 @@ if __name__ == "__main__":
         ap_at_t = average_precision_score(flat_labels, flat_preds, "micro")
         print(f"AP@{iou_threshold:.2f}: {ap_at_t:.2f}")
 
-        fig.clf()
-    
+        ax1.clear()
+        ax2.clear()
+
         # plot precision recall curve
         p, r, t = precision_recall_curve(flat_labels, flat_preds)
         ax1.plot(r, p, color="black")
@@ -168,7 +169,8 @@ if __name__ == "__main__":
 
         x, _ = dataset[i]
         x = unnormalize(x).transpose(0, 2).transpose(0, 1)
-        fig.clf()
+
+        ax.clear()
         ax.imshow(x)
 
         # plot true boxes in red
