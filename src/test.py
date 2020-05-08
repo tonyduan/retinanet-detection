@@ -3,7 +3,6 @@ import pathlib
 import os
 import sys
 import torch
-import torch.nn as nn
 from argparse import ArgumentParser
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
@@ -33,7 +32,7 @@ if __name__ == "__main__":
         save_path = args.save_path
 
     model = RetinaNet(device=args.device, num_classes=get_num_labels(args.dataset))
-    model = nn.DataParallel(model) if args.data_parallel else model
+    model = DataParallelWrapper(model) if args.data_parallel else model
     saved_dict = torch.load(save_path)
     model.load_state_dict(saved_dict)
     model.eval()

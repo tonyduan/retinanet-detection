@@ -4,7 +4,6 @@ import pickle
 import os
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from argparse import ArgumentParser
 from torchnet import meter
@@ -38,7 +37,7 @@ if __name__ == "__main__":
 
     model = RetinaNet(device=args.device, num_classes=get_num_labels(args.dataset),
                       alpha=args.alpha, gamma=args.gamma, pi=args.pi)
-    model = nn.DataParallel(model) if args.data_parallel else model
+    model = DataParallelWrapper(model) if args.data_parallel else model
     model.train()
 
     dataset = get_dataset(args.dataset, "train")
@@ -48,8 +47,6 @@ if __name__ == "__main__":
                               num_workers=args.num_workers,
                               pin_memory=False,
                               collate_fn=lambda x: collate_fn(x, args.dataset))
-
-    x, labels, bbox = next(iter(train_loader))
 
     optimizer = optim.SGD(model.parameters(),
                           lr=args.lr,

@@ -9,6 +9,18 @@ from src.blocks import BasicBlock, Bottleneck
 from src.utils import *
 
 
+class DataParallelWrapper(nn.DataParallel):
+    """
+    Wrapper around nn.DataParallel that exposes custom methods.
+    Source: https://github.com/pytorch/pytorch/issues/16885
+    """
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.module, name)
+
+
 class RetinaNet(nn.Module):
     """
     RetinaNet [Lin et al. ICCV 2017].
