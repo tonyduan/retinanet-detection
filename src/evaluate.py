@@ -64,12 +64,18 @@ def flatten_detections_at_threshold(true_labels, true_boxes, pred_labels, pred_b
             flat_preds.extend([0.01] * len(true_boxes[idx]))
             continue
 
+        # (2) handle case where no ground truth boxes are in the image
+        if len(true_boxes[idx]) == 0:
+            flat_labels.extend([0] * len(pred_boxes[idx]))
+            flat_preds.extend(pred_scores[idx])
+            continue
+
         ious = calculate_iou(np.array(true_boxes[idx]), np.array(pred_boxes[idx]), lib="numpy")
 
         pred_labels[idx] = np.array(pred_labels[idx])
         true_labels[idx] = np.array(true_labels[idx])
 
-        # (2) assign each true box to the prediction with which it has largest overlap
+        # (3) assign each true box to the prediction with which it has largest overlap
         for true_box_idx in range(len(true_labels[idx])):
             
             label_match_mask = pred_labels[idx] == true_labels[idx][true_box_idx]
@@ -87,7 +93,7 @@ def flatten_detections_at_threshold(true_labels, true_boxes, pred_labels, pred_b
             # mark the proposal box as used
             ious[:, pred_box_idx] = -1
         
-        # (3) for all remaining predicted boxes assign a label of zero
+        # (4) for all remaining predicted boxes assign a label of zero
         for pred_box_idx in range(len(pred_labels[idx])):
             if np.any(ious[:, pred_box_idx] >= 0.0):
                 flat_labels.append(0)
