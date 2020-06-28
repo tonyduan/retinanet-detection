@@ -21,7 +21,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(6, 4), nrows=1, ncols=1)
     ax.imshow(x)
 
-    for label_id, (xmin, ymin, xmax, ymax) in zip(labels, boxes):
+    for label_id, (ymin, xmin, ymax, xmax) in zip(labels, boxes):
         box = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, 
                                 edgecolor="red", facecolor="none", linewidth=1)
         ax.add_patch(box)

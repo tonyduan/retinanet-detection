@@ -144,8 +144,8 @@ class RetinaNet(nn.Module):
 
         Returns
         -------
-        cls_preds: (# fm)-list of preds each of size (num_batch, num_classes, num_anchors, fmw, fmh)
-        reg_preds: (# fm)-list of preds each of size (num_batch, 4, num_anchors, fmw, fmh)
+        cls_preds: (# fm)-list of preds each of size (num_batch, num_classes, num_anchors, fmh, fmw)
+        reg_preds: (# fm)-list of preds each of size (num_batch, 4, num_anchors, fmh, fmw)
         """
         # standard resnet backbone preamble
         out = self.maxpool(F.relu(self.bn1(self.conv1(x))))
@@ -167,8 +167,8 @@ class RetinaNet(nn.Module):
             if i == 0:
                 out = lateral_layer(c_layer)
             else:
-                fmw, fmh = c_layer.shape[-2], c_layer.shape[-1]
-                out = F.interpolate(out, size=(fmw, fmh), mode="nearest")
+                fmh, fmw = c_layer.shape[-2], c_layer.shape[-1]
+                out = F.interpolate(out, size=(fmh, fmw), mode="nearest")
                 out = lateral_layer(c_layer) + out
             out = top_down_layer(out)
             p_layers.insert(0, out)
@@ -177,14 +177,14 @@ class RetinaNet(nn.Module):
         cls_preds = [self.cls_head(p) for p in p_layers]
         reg_preds = [self.reg_head(p) for p in p_layers]
         for i in range(self.num_feature_maps):
-            fmw, fmh = cls_preds[i].shape[-2], cls_preds[i].shape[-1]
-            cls_preds[i] = cls_preds[i].reshape(-1, self.num_classes, self.num_anchors, fmw, fmh)
-            reg_preds[i] = reg_preds[i].reshape(-1, 4, self.num_anchors, fmw, fmh)
+            fmh, fmw = cls_preds[i].shape[-2], cls_preds[i].shape[-1]
+            cls_preds[i] = cls_preds[i].reshape(-1, self.num_classes, self.num_anchors, fmh, fmw)
+            reg_preds[i] = reg_preds[i].reshape(-1, 4, self.num_anchors, fmh, fmw)
 
         return cls_preds, reg_preds
     
     @classmethod
-    def get_all_fm_anchor_widths_heights(cls):
+    def get_all_fm_anchor_heights_widths(cls):
         """
         Returns
         -------
@@ -197,33 +197,34 @@ class RetinaNet(nn.Module):
                                                                         cls.anchor_scales)):
                 height = math.sqrt(area / aspect_ratio) * scale
                 width = aspect_ratio * height * scale
-                anchor_sizes[i][j][0] = width
-                anchor_sizes[i][j][1] = height
+                anchor_sizes[i][j][0] = height
+                anchor_sizes[i][j][1] = width
         
         return anchor_sizes
 
     @classmethod
-    def get_all_fm_anchor_boxes(cls, width, height):
+    def get_all_fm_anchor_boxes(cls, height, width):
         """
-        Return all anchor boxes as tensors (on CPU), for a given input width and height.
+        Return all anchor boxes as tensors (on CPU), for a given input height and width.
+        An anchor box is a 4-tuple (y, x, height, width)
 
         Returns
         -------
-        anchors: (# fm)-length list of anchor boxes each of size (num_anchors, fm width, fm height)
+        anchors: (# fm)-length list of anchor boxes each of size (num_anchors, fm height, fm width)
         """
         all_fm_anchor_boxes = []
 
-        for k, anchor_w_h in enumerate(cls.get_all_fm_anchor_widths_heights()):
+        for k, anchor_h_w in enumerate(cls.get_all_fm_anchor_heights_widths()):
             
-            fmw, fmh = math.ceil(width / 2 ** (3 + k)), math.ceil(height / 2 ** (3 + k))
-            grid_width, grid_height = width / fmw, height / fmh
-            fm_anchor_boxes = torch.zeros(cls.num_anchors, fmw, fmh, 4)
+            fmh, fmw = math.ceil(height / 2 ** (3 + k)), math.ceil(width / 2 ** (3 + k))
+            grid_height, grid_width = height / fmh, width / fmw
+            fm_anchor_boxes = torch.zeros(cls.num_anchors, fmh, fmw, 4)
 
-            for i, j in itertools.product(range(fmw), range(fmh)):
-                fm_anchor_boxes[:, i, j, 0] = (i + 0.5) * grid_width - 0.5 * anchor_w_h[:, 0]
-                fm_anchor_boxes[:, i, j, 1] = (j + 0.5) * grid_height - 0.5 * anchor_w_h[:, 1]
-                fm_anchor_boxes[:, i, j, 2] = anchor_w_h[:, 0]
-                fm_anchor_boxes[:, i, j, 3] = anchor_w_h[:, 1]
+            for i, j in itertools.product(range(fmh), range(fmw)):
+                fm_anchor_boxes[:, i, j, 0] = (i + 0.5) * grid_height - 0.5 * anchor_h_w[:, 0]
+                fm_anchor_boxes[:, i, j, 1] = (j + 0.5) * grid_width - 0.5 * anchor_h_w[:, 1]
+                fm_anchor_boxes[:, i, j, 2] = anchor_h_w[:, 0]
+                fm_anchor_boxes[:, i, j, 3] = anchor_h_w[:, 1]
 
             all_fm_anchor_boxes.append(fm_anchor_boxes)
             
@@ -245,11 +246,11 @@ class RetinaNet(nn.Module):
 
         Returns
         -------
-        all_fm_cls_tgts: (# fm)-list of tgts each of size (num_classes, num_anchors, fmw, fmh)
-        all_fm_reg_tgts: (# fm)-list of tgts each of size (4, num_anchors, fmw, fmh)
+        all_fm_cls_tgts: (# fm)-list of tgts each of size (num_classes, num_anchors, fmh, fmw)
+        all_fm_reg_tgts: (# fm)-list of tgts each of size (4, num_anchors, fmh, fmw)
         """
-        C, W, H = x.shape
-        all_fm_anchor_boxes = cls.get_all_fm_anchor_boxes(W, H)
+        C, H, W = x.shape
+        all_fm_anchor_boxes = cls.get_all_fm_anchor_boxes(H, W)
         all_fm_cls_tgts = []
         all_fm_reg_tgts = []
 
@@ -300,8 +301,8 @@ class RetinaNet(nn.Module):
         boxes: (# detections)-list of boxes each of shape (4,)
         scores: (# detections)-list of probabilities in the range [cls_threshold, 1]
         """
-        C, W, H = x.shape
-        all_fm_anchor_boxes = cls.get_all_fm_anchor_boxes(W, H)
+        C, H, W = x.shape
+        all_fm_anchor_boxes = cls.get_all_fm_anchor_boxes(H, W)
 
         label_to_all_boxes = defaultdict(list)
         label_to_all_scores = defaultdict(list)
@@ -346,8 +347,8 @@ class RetinaNet(nn.Module):
         Parameters
         ----------
         x: (batch_size, 3, width, height) tensor of images
-        cls_tgts: (# fm)-list of tgts each of size (batch_size, num_classes, num_anchors, fmw, fmh)
-        reg_tgts: (# fm)-list of tgts each of size (batch_size, 4, num_anchors, fmw, fmh)
+        cls_tgts: (# fm)-list of tgts each of size (batch_size, num_classes, num_anchors, fmh, fmw)
+        reg_tgts: (# fm)-list of tgts each of size (batch_size, 4, num_anchors, fmh, fmw)
 
         Returns
         -------

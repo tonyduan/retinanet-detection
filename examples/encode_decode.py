@@ -21,7 +21,7 @@ if __name__ == "__main__":
     box = patches.Rectangle((0, 0), WIDTH, HEIGHT, edgecolor="green", facecolor="none", linewidth=1)
     ax3.add_patch(box)
 
-    for (x, y, w, h) in boxes:
+    for (y, x, h, w) in boxes:
         box = patches.Rectangle((x, y), w, h, edgecolor="red", facecolor="none", linewidth=1)
         ax1.add_patch(box)
 
@@ -42,17 +42,17 @@ if __name__ == "__main__":
     print(f"== Masked anchors: {num_masked}")
     print(f"== Total anchors: {num_pos + num_neg + num_masked}")
 
-    anchor_boxes = RetinaNet.get_all_fm_anchor_boxes(WIDTH, HEIGHT)
+    anchor_boxes = RetinaNet.get_all_fm_anchor_boxes(HEIGHT, WIDTH)
     for i in range(RetinaNet.num_feature_maps):
         idxs = (cls_tgts[i] == 1).nonzero()
-        for _, anchor_no, fmx, fmy in idxs:
-            x, y, w, h = anchor_boxes[i][anchor_no, fmx, fmy]
+        for _, anchor_no, fmy, fmx in idxs:
+            y, x, h, w = anchor_boxes[i][anchor_no, fmy, fmx]
             box = patches.Rectangle((x, y), w, h, edgecolor="red", facecolor="none", linewidth=1)
             ax2.add_patch(box)
 
     zeroed_reg_tgts = [torch.zeros_like(t) for t in reg_tgts]
     labels, boxes, scores = RetinaNet.decode(image, cls_tgts, zeroed_reg_tgts, cls_threshold=0.5)
-    for (x, y, w, h) in boxes:
+    for (y, x, h, w) in boxes:
         box = patches.Rectangle((x, y), w, h, edgecolor="red", facecolor="none", linewidth=1)
         ax3.add_patch(box)
 

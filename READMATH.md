@@ -1,10 +1,10 @@
 ### RetinaNet Object Detection
 
-Last update: May 2020.
+Last update: June 2020.
 
 ---
 
-This repository implements the RetinaNet architecture for single-shot object detction as described in [1], built on top of a ResNet-50 backbone [2]. Here we support the MSCOCO [3] and Pascal VOC [4] datasets. See the `out/` directory for examples from trained models.
+This repository implements the RetinaNet architecture for single-shot object detction as described in [1], built on top of a ResNet-50 backbone [2]. Here we support the MSCOCO [3] and Pascal VOC [4] datasets. See the `out/` directory for examples from trained models. At an IoU threshold of 0.5, we achieve 0.38 micro-averaged AUPRC on MSCOCO and 0.67 micro-averaged AUPRC on Pascal VOC.
 
 #### Preliminaries
 

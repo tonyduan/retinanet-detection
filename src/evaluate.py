@@ -10,7 +10,7 @@ from sklearn.metrics import average_precision_score, precision_recall_curve
 from src.datasets import *
 
 
-def calibration_curve(labels, preds, n_bins=10, eps=1e-8, raise_on_nan=True):
+def calibration_curve(labels, preds, n_bins=8, eps=1e-8, raise_on_nan=True):
     """
     Returns calibration curve at the pre-specified number of bins.
     -------
@@ -42,9 +42,9 @@ def flatten_detections_at_threshold(true_labels, true_boxes, pred_labels, pred_b
     Parameters
     ----------
     true_labels: (n, *) list of lists of true classes per image,
-    true_boxes: (n, *, 4) list of lists of true box (x, y, w, h) per image,
+    true_boxes: (n, *, 4) list of lists of true box (y, x, h, w) per image,
     pred_labels: (n, *) list of lists of predicted classes per image,
-    pred_boxes: (n, *, 4) list of lists of predicted box (x, y, w, h) per image,
+    pred_boxes: (n, *, 4) list of lists of predicted box (y, x, h, w) per image,
     pred_scores: (n, *) list of lists of predicted scores per image.
 
     Returns
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     fig, (ax1, ax2) = plt.subplots(figsize=(7, 3), nrows=1, ncols=2)
     
-    for iou_threshold in (0.5, 0.6, 0.7, 0.8, 0.9):
+    for iou_threshold in np.linspace(0.5, 0.95, num=10):
 
         # need to flatten labels 
         flat_labels, flat_preds = flatten_detections_at_threshold(true_labels, true_boxes,
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         ax.imshow(x)
 
         # plot true boxes in red
-        for label_id, (x, y, w, h) in zip(true_labels[i], true_boxes[i]):
+        for label_id, (y, x, h, w) in zip(true_labels[i], true_boxes[i]):
             box = patches.Rectangle((x, y), w, h, edgecolor="red", 
                                     facecolor="none", linewidth=1)
             ax.add_patch(box)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
                     bbox={"facecolor": "black", "alpha": 0.5})
 
         # plot predicted boxes in green, at a particular score threshold
-        for label_id, score, (x, y, w, h) in zip(pred_labels[i], pred_scores[i], pred_boxes[i]):
+        for label_id, score, (y, x, h, w) in zip(pred_labels[i], pred_scores[i], pred_boxes[i]):
             if score > 0.5:
                 box = patches.Rectangle((x, y), w, h, edgecolor="green", 
                                         facecolor="none", linewidth=1)

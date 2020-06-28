@@ -43,12 +43,12 @@ def extract_labels_boxes_from_annotation(annotation, name):
     Returns
     -------
     labels: variable length list of integers representing labels of each box
-    boxes: variable length list of tuples of 4 floats (xmin, ymin, xmax, ymax) of each box
+    boxes: variable length list of tuples of 4 floats (ymin, xmin, ymax, xmax) of each box
     """
     if name == "voc":
 
         labels_to_id = get_labels_to_id(name)
-        bbox_fn = lambda d: (float(d["xmin"]), float(d["ymin"]), float(d["xmax"]), float(d["ymax"]))
+        bbox_fn = lambda d: (float(d["ymin"]), float(d["xmin"]), float(d["ymax"]), float(d["xmax"]))
         if isinstance(annotation["annotation"]["object"], list):
             labels = [labels_to_id[obj["name"]] for obj in annotation["annotation"]["object"]]
             boxes = [bbox_fn(obj["bndbox"]) for obj in annotation["annotation"]["object"]]
@@ -58,8 +58,9 @@ def extract_labels_boxes_from_annotation(annotation, name):
         return labels, boxes
 
     if name == "coco":
+
         labels_to_id = get_labels_to_id(name)
-        bbox_fn = lambda t: (t[0], t[1], t[0] + t[2], t[1] + t[3]) 
+        bbox_fn = lambda t: (t[1], t[0], t[1] + t[3], t[0] + t[2])
         labels = [labels_to_id[COCO_MAPPING[obj["category_id"]]] for obj in annotation]
         boxes = [bbox_fn(obj["bbox"]) for obj in annotation]
         return labels, boxes
@@ -114,7 +115,8 @@ def collate_fn(batch, name):
     Notes
     -----
     Images in the batch are zero-padded to the maximum width and height.
-    PyTorch dataloaders default order (channel, height, width); we use (channel, width, height).
+    Note that  PyTorch dataloaders default order (channel, height, width); this must be respected
+    to maintain consistency with pre-trained weights.
 
     Returns
     -------
@@ -123,18 +125,18 @@ def collate_fn(batch, name):
     reg_tgts: (# fm)-list of tensors each of size (batch_size, 4, num_anchors, fmw, fmh)
     """
     batch_size = len(batch)
-    max_width = max([x.shape[2] for (x, y) in batch])
     max_height = max([x.shape[1] for (x, y) in batch])
+    max_width = max([x.shape[2] for (x, y) in batch])
 
-    images = torch.zeros((batch_size, 3, max_width, max_height), dtype=torch.float)
+    images = torch.zeros((batch_size, 3, max_height, max_width), dtype=torch.float)
     cls_tgts = [[] for _ in range(RetinaNet.num_feature_maps)]
     reg_tgts = [[] for _ in range(RetinaNet.num_feature_maps)]
     num_labels = get_num_labels(name)
 
     for i, (x, annotation) in enumerate(batch):
 
-        width, height = x.shape[2], x.shape[1]
-        images[i, :, :width, :height] = x.transpose(1, 2)
+        height, width = x.shape[1], x.shape[2]
+        images[i, :, :height, :width] = x
         labels, boxes = annotation
         boxes = [torch.tensor(bbox_convert_corners_to_sizes(b), dtype=torch.float) for b in boxes]
         cls_tgts_i, reg_tgts_i = RetinaNet.encode(images[i], labels, boxes, num_labels)

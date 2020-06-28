@@ -4,18 +4,18 @@ import numpy as np
 
 def bbox_convert_corners_to_sizes(box):
     """
-    Convert (xmin, ymin, xmax, ymax) => (xmin, ymin, width, height) representation.
+    Convert (ymin, xmin, ymax, xmax) => (ymin, xmin, height, width) representation.
     """
-    xmin, ymin, xmax, ymax = box
-    return (xmin, ymin, xmax - xmin, ymax - ymin)
+    ymin, xmin, ymax, xmax = box
+    return (ymin, xmin, ymax - ymin, xmax - xmin)
 
 
 def bbox_convert_sizes_to_corners(box):
     """
-    Convert (xmin, ymin, width, height) => (xmin, ymin, xmax, ymax) representation.
+    Convert (ymin, xmin, height, width) => (ymin, xmin, ymax, xmax) representation.
     """
-    xmin, ymin, width, height = box
-    return (xmin, ymin, xmin + width, ymin + height)
+    ymin, xmin, height, width = box
+    return (ymin, xmin, ymin + height, xmin + width)
 
 
 def calculate_iou(boxesA, boxesB, lib="torch"):

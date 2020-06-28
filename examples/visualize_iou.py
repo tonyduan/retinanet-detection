@@ -14,12 +14,12 @@ if __name__ == "__main__":
                           [245.4695, 182.6774, 156.3983, 254.2001]])
     fig, ax = plt.subplots(figsize=(6, 6), nrows=1, ncols=1)
 
-    for (xmin, ymin, width, height) in boxes:
+    for (ymin, xmin, height, width) in boxes:
         box = patches.Rectangle((xmin, ymin), width, height, edgecolor="red", 
                                 facecolor="none", linewidth=1)
         ax.add_patch(box)
 
-    print(calculate_iou(boxes, boxes[1:]))
+    print(calculate_iou(boxes, boxes))
 
     ax.set_xlim((0, 800))
     ax.set_ylim((0, 800))

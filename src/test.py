@@ -48,7 +48,7 @@ if __name__ == "__main__":
     for i in tqdm(range(len(test_dataset))):
         
         x, (true_labels, true_boxes) = test_dataset[i]
-        x = x.to(args.device).transpose(1, 2)
+        x = x.to(args.device)
 
         cls_preds, reg_preds = model.forward(x.unsqueeze(0))
         cls_preds = [p.to("cpu").detach().squeeze() for p in cls_preds]
